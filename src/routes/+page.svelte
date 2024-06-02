@@ -8,9 +8,10 @@
     import { PUBLIC_API_KEY } from '$env/static/public';
 
     let apod, preview;
-    let custom_date = new Date();
-    let select_date;
+    let custom_date = new Date(); // Custom Selected Date
+    let select_date; // Show Date Picker
 
+    // Get Youtube Video Thumbnail
     function getVideoThumbnail(url) {
         var videoCode = null;
     
@@ -28,13 +29,14 @@
         return "https://img.youtube.com/vi/" + videoCode + "/hqdefault.jpg";
     }
 
+    // Pretify Date
     function FormatDate(date) {
         const new_date = new Date(date);
         const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
         return new_date.toLocaleDateString('ae-ae', options)
     }
 
-
+    // Fetch APOD
     async function getAPOD(cus_date) {
         apod = false;
         let url;
@@ -48,13 +50,55 @@
         apod = result.data ?? {};
     } 
 
+    // Close Image Preview
     function closePreview() {
         preview = null;
         document.body.style.overflow = "auto";
     }
 
+    // Right Click Menu
+    let pos = { x: 0, y: 0 }
+    let menu = { h: 0, y: 0 }
+    let browser = { h: 0, y: 0 }
+    let showMenu = false;
+
+    function rightClickContextMenu(e){
+        showMenu = true
+        browser = {
+            w: window.innerWidth,
+            h: window.innerHeight
+        };
+        pos = {
+            x: e.clientX,
+            y: e.clientY
+        };
+        if (browser.h -  pos.y < menu.h)
+            pos.y = pos.y - menu.h
+        if (browser.w -  pos.x < menu.w)
+            pos.x = pos.x - menu.w
+    }
+    function onPageClick(e){
+        showMenu = false;
+    }
+    function getContextMenuDimension(node){
+        let height = node.offsetHeight
+        let width = node.offsetWidth
+        menu = {
+            h: height,
+            w: width
+        }
+    }
+    let menuItems = [
+        {
+            'name': 'email',
+            'onClick': getAPOD,
+            'displayText': "Reload",
+        }
+    ]
+    // End Right Click Menu
+
     onMount(async () => {
-        await getAPOD(false);
+        await getAPOD(false); // Load APOD On Startup
     });
 </script>
 
@@ -95,37 +139,96 @@
     </div>
 </div>
 
-{#if apod}
-{#if apod.media_type == "video"}
-<div class="w-full h-72  bg-contain bg-no-repeat bg-center flex justify-center items-center" style="background-image: url('{getVideoThumbnail(apod.url)}'); background-color: rgba(18,18,18,0.6);">
-    <button on:click={async () => {await open(apod.url);}} class="px-4 py-2 rounded-lg font-medium flex items-center justify-center" style="background-color: rgba(18,18,18,0.5); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="1.2rem" height="1.2rem" class="mr-2" viewBox="0 0 24 24"><path fill="currentColor" d="M21.409 9.353a2.998 2.998 0 0 1 0 5.294L8.597 21.614C6.534 22.737 4 21.277 4 18.968V5.033c0-2.31 2.534-3.769 4.597-2.648z"/></svg>
-        Play Video
-    </button>
-</div>
-{:else if apod.media_type == "image"}
-<div class="w-full h-72 bg-cover bg-no-repeat bg-center flex justify-center items-center group duration-200" style="background-image: url('{apod.url}'); background-color: rgba(18,18,18,0.6);">
-    <button on:click={async () => {preview = apod.hdurl ?? apod.url; document.body.style.overflow = "hidden";}} class="group-hover:opacity-100 opacity-0 duration-200 px-4 py-2 rounded-lg font-medium flex items-center justify-center" style="background-color: rgba(18,18,18,0.5); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="1.2rem" height="1.2rem" class="mr-2" viewBox="0 0 16 16"><path fill="currentColor" d="M1.75 10a.75.75 0 0 1 .75.75v2.5c0 .138.112.25.25.25h2.5a.75.75 0 0 1 0 1.5h-2.5A1.75 1.75 0 0 1 1 13.25v-2.5a.75.75 0 0 1 .75-.75m12.5 0a.75.75 0 0 1 .75.75v2.5A1.75 1.75 0 0 1 13.25 15h-2.5a.75.75 0 0 1 0-1.5h2.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 .75-.75M2.75 2.5a.25.25 0 0 0-.25.25v2.5a.75.75 0 0 1-1.5 0v-2.5C1 1.784 1.784 1 2.75 1h2.5a.75.75 0 0 1 0 1.5ZM10 1.75a.75.75 0 0 1 .75-.75h2.5c.966 0 1.75.784 1.75 1.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.25.25 0 0 0-.25-.25h-2.5a.75.75 0 0 1-.75-.75"/></svg>
-        View
-    </button>
-</div>
-{/if}
-<div class="p-4">
-    <p class="text-2xl font-medium">{apod.title}</p>
-    <p class="mt-1 text-sm text-gray-300">{FormatDate(apod.date ?? Date.now())} {#if apod.copyright}- {apod.copyright}{/if}</p>
-    <p class="mt-2 text-gray-200 text-sm">{apod.explanation}</p>
-</div>
+<main class="flex justify-center items-center w-full">
+    <section class="max-w-5xl">
+    {#if apod}
+    {#if apod.media_type == "video"}
+    <div class="w-full h-72  bg-contain bg-no-repeat bg-center flex justify-center items-center" style="background-image: url('{getVideoThumbnail(apod.url)}'); background-color: rgba(18,18,18,0.6);">
+        <button on:click={async () => {await open(apod.url);}} class="px-4 py-2 rounded-lg font-medium flex items-center justify-center" style="background-color: rgba(18,18,18,0.5); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.2rem" height="1.2rem" class="mr-2" viewBox="0 0 24 24"><path fill="currentColor" d="M21.409 9.353a2.998 2.998 0 0 1 0 5.294L8.597 21.614C6.534 22.737 4 21.277 4 18.968V5.033c0-2.31 2.534-3.769 4.597-2.648z"/></svg>
+            Play Video
+        </button>
+    </div>
+    {:else if apod.media_type == "image"}
+    <div class="w-full h-72 bg-cover bg-no-repeat bg-center flex justify-center items-center group duration-200" style="background-image: url('{apod.url}'); background-color: rgba(18,18,18,0.6);">
+        <button on:click={async () => {preview = apod.hdurl ?? apod.url; document.body.style.overflow = "hidden";}} class="group-hover:opacity-100 opacity-0 duration-200 px-4 py-2 rounded-lg font-medium flex items-center justify-center" style="background-color: rgba(18,18,18,0.5); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.2rem" height="1.2rem" class="mr-2" viewBox="0 0 16 16"><path fill="currentColor" d="M1.75 10a.75.75 0 0 1 .75.75v2.5c0 .138.112.25.25.25h2.5a.75.75 0 0 1 0 1.5h-2.5A1.75 1.75 0 0 1 1 13.25v-2.5a.75.75 0 0 1 .75-.75m12.5 0a.75.75 0 0 1 .75.75v2.5A1.75 1.75 0 0 1 13.25 15h-2.5a.75.75 0 0 1 0-1.5h2.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 .75-.75M2.75 2.5a.25.25 0 0 0-.25.25v2.5a.75.75 0 0 1-1.5 0v-2.5C1 1.784 1.784 1 2.75 1h2.5a.75.75 0 0 1 0 1.5ZM10 1.75a.75.75 0 0 1 .75-.75h2.5c.966 0 1.75.784 1.75 1.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.25.25 0 0 0-.25-.25h-2.5a.75.75 0 0 1-.75-.75"/></svg>
+            View
+        </button>
+    </div>
+    {/if}
+    <div class="p-4">
+        <p class="text-2xl font-medium">{apod.title}</p>
+        <p class="mt-1 text-sm text-gray-300">{FormatDate(apod.date ?? Date.now())} {#if apod.copyright}- {apod.copyright}{/if}</p>
+        <p class="mt-2 text-gray-200 text-sm">{apod.explanation}</p>
+    </div>
 
-{#if preview}
-<div transition:fade={{ duration: 200 }} on:keydown={closePreview} on:click={closePreview} role="button" tabindex="0" class="top-0 left-0 fixed bg-black/80 flex justify-center items-center w-screen h-screen pt-16 p-10 z-5">
-    <img src="{preview}" class="max-w-full max-h-full object-contain" alt="APOD Preview"/>
-</div>
+    {#if preview}
+    <div transition:fade={{ duration: 200 }} on:keydown={closePreview} on:click={closePreview} role="button" tabindex="0" class="top-0 left-0 fixed bg-black/80 flex justify-center items-center w-screen h-screen pt-16 p-10 z-5">
+        <img src="{preview}" class="max-w-full max-h-full object-contain" alt="APOD Preview"/>
+    </div>
+    {/if}
+
+    {:else}
+    <div class="flex w-full flex-col justify-center items-center pt-20">
+        <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" width="64px" height="64px" viewBox="0 0 128 128" xml:space="preserve"><g><path d="M64 16.5A66.53 66.53 0 0 0 .26 64a63.75 63.75 0 0 1 127.5 0h-.02A66.53 66.53 0 0 0 64 16.5z" fill="#ffffff"/><animateTransform attributeName="transform" type="rotate" from="0 64 64" to="360 64 64" dur="1800ms" repeatCount="indefinite"></animateTransform></g></svg>
+        <p class="font-medium text-lg mt-6">Loading...</p>
+    </div>
+    {/if}
+    </section>
+</main>
+
+{#if showMenu}
+<nav use:getContextMenuDimension style="position: absolute; top:{pos.y}px; left:{pos.x}px">
+    <div class="navbar" id="navbar">
+        <ul>
+            {#each menuItems as item}
+                {#if item.name == "hr"}
+                    <hr>
+                {:else}
+                    <li><button on:click={item.onClick}><i class={item.class}></i>{item.displayText}</button></li>
+                {/if}
+            {/each}
+        </ul>
+    </div>
+</nav>
 {/if}
 
-{:else}
-<div class="flex w-full flex-col justify-center items-center pt-20">
-    <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" width="64px" height="64px" viewBox="0 0 128 128" xml:space="preserve"><g><path d="M64 16.5A66.53 66.53 0 0 0 .26 64a63.75 63.75 0 0 1 127.5 0h-.02A66.53 66.53 0 0 0 64 16.5z" fill="#ffffff"/><animateTransform attributeName="transform" type="rotate" from="0 64 64" to="360 64 64" dur="1800ms" repeatCount="indefinite"></animateTransform></g></svg>
-    <p class="font-medium text-lg mt-6">Loading...</p>
-</div>
-{/if}
+<svelte:window on:contextmenu|preventDefault={rightClickContextMenu} 
+on:click={onPageClick} />
+
+<style>
+    .navbar{
+        display: inline-flex;
+        border: 1px #2c2f36 solid;
+        background-color: rgba(18,18,18,0.6) !important;
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border-radius: 7px;
+        overflow: hidden;
+        flex-direction: column;
+    }
+    .navbar ul{
+        margin: 6px;
+    }
+    ul li{
+        display: block;
+        list-style-type: none;
+    }
+    ul li button{
+        font-size: 14px;
+        color: #d7d7d7;
+        width: 100%;
+        text-align: left;
+        transition: 200ms;
+        padding: 0px 10px 0px 10px;
+    }
+    ul li button:hover{
+        color: #ffffff;
+    }
+    hr{
+        border: none;
+        border-bottom: 1px solid #ccc;
+        margin: 5px 0px;
+    }
+</style>

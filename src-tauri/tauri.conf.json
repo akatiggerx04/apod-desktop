@@ -7,8 +7,8 @@
     "distDir": "../build"
   },
   "package": {
-    "productName": "APOD",
-    "version": "0.1.0"
+    "productName": "APOD Desktop",
+    "version": "0.1.1"
   },
   "tauri": {
     "allowlist": {

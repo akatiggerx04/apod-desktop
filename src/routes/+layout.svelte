@@ -5,7 +5,7 @@
 <slot/>
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+    @import url('/assets/fonts/montserrat.css');
 
     :global(html) {
         font-family: "Montserrat", sans-serif;
