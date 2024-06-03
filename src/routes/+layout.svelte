@@ -11,6 +11,8 @@
         font-family: "Montserrat", sans-serif;
         background-color: #1B1B1D;
         color: white;
+        user-select: none;
+        cursor: default;
     }
 
     :global(:root) {

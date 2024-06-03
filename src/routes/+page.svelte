@@ -6,6 +6,10 @@
     import { appWindow } from '@tauri-apps/api/window';
     import { DatePicker } from 'date-picker-svelte';
     import { PUBLIC_API_KEY } from '$env/static/public';
+    import { isOffline } from 'svelte-connection-status';
+    import { getVersion } from '@tauri-apps/api/app';
+
+    let appVersion;
 
     let apod, preview;
     let custom_date = new Date(); // Custom Selected Date
@@ -90,7 +94,7 @@
     }
     let menuItems = [
         {
-            'name': 'email',
+            'name': 'reload-apod',
             'onClick': getAPOD,
             'displayText': "Reload",
         }
@@ -98,6 +102,7 @@
     // End Right Click Menu
 
     onMount(async () => {
+        appVersion = await getVersion(); // Get APP Version
         await getAPOD(false); // Load APOD On Startup
     });
 </script>
@@ -116,7 +121,7 @@
                 </button>
                 {#if select_date}
                 <div transition:fade={{ duration: 150 }} class="absolute top-5">
-                    <DatePicker bind:value={custom_date} min={new Date("1999")} max={new Date} format="YYYY-MM-DD" />
+                    <DatePicker bind:value={custom_date} min={new Date("June 16 1995")} max={new Date} format="YYYY-MM-DD" />
                     <button on:click={async () => {getAPOD(custom_date); select_date = false;}} class="duration-200 text-gray-300 hover:text-white text-sm px-4 py-2 rounded-lg font-medium mt-2 border border-[#2c2f36]" style="background-color: rgba(18,18,18, 0.6); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);">Confirm Date</button>
                 </div>
                 {/if}
@@ -139,6 +144,13 @@
     </div>
 </div>
 
+{#if $isOffline && !apod}
+<section class="w-full bg-red-600 p-4 flex items-center justify-start gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" width="1.2rem" height="1.2rem" viewBox="0 0 24 24"><path fill="currentColor" d="m6.35 15.35l-2.1-2.15q1.55-1.55 3.55-2.375T12 10t4.213.838t3.537 2.412l-2.1 2.1q-1.125-1.125-2.588-1.737T12 13t-3.062.613T6.35 15.35M2.1 11.1L0 9q2.375-2.425 5.488-3.713T12 4t6.513 1.288T24 9l-2.1 2.1q-1.975-1.975-4.538-3.037T12 7T6.637 8.063T2.1 11.1M12 21l-3.525-3.55q.7-.7 1.613-1.075T12 16t1.913.375t1.612 1.075z"/></svg>
+    <p class="text-white font-medium text-sm">Unable to connect to the internet. Please check your internet connection.</p>
+</section>
+{/if}
+
 <main class="flex justify-center items-center w-full">
     <section class="max-w-5xl">
     {#if apod}
@@ -157,11 +169,18 @@
         </button>
     </div>
     {/if}
-    <div class="p-4">
-        <p class="text-2xl font-medium">{apod.title}</p>
-        <p class="mt-1 text-sm text-gray-300">{FormatDate(apod.date ?? Date.now())} {#if apod.copyright}- {apod.copyright}{/if}</p>
-        <p class="mt-2 text-gray-200 text-sm">{apod.explanation}</p>
+    {#if apod?.code == "404"}
+    <div class="p-4 mt-8">
+        <p class="text-2xl font-medium">No APOD found for this date.</p>
+        <p class="text-gray-300">Please try again later.</p>
     </div>
+    {:else}
+    <div class="p-4">
+        <p class="text-2xl font-medium cursor-text select-text">{apod.title ?? ""}</p>
+        <p class="mt-1 text-sm text-gray-300">{FormatDate(apod.date ?? Date.now())} {#if apod.copyright}- {apod.copyright}{/if}</p>
+        <p class="mt-2 text-gray-200 text-sm select-text cursor-text">{apod.explanation ?? ""}</p>
+    </div>
+    {/if}
 
     {#if preview}
     <div transition:fade={{ duration: 200 }} on:keydown={closePreview} on:click={closePreview} role="button" tabindex="0" class="top-0 left-0 fixed bg-black/80 flex justify-center items-center w-screen h-screen pt-16 p-10 z-5">
@@ -173,13 +192,14 @@
     <div class="flex w-full flex-col justify-center items-center pt-20">
         <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" width="64px" height="64px" viewBox="0 0 128 128" xml:space="preserve"><g><path d="M64 16.5A66.53 66.53 0 0 0 .26 64a63.75 63.75 0 0 1 127.5 0h-.02A66.53 66.53 0 0 0 64 16.5z" fill="#ffffff"/><animateTransform attributeName="transform" type="rotate" from="0 64 64" to="360 64 64" dur="1800ms" repeatCount="indefinite"></animateTransform></g></svg>
         <p class="font-medium text-lg mt-6">Loading...</p>
+        <p class="text-gray-300 text-sm">APOD Desktop {appVersion}</p>
     </div>
     {/if}
     </section>
 </main>
 
 {#if showMenu}
-<nav use:getContextMenuDimension style="position: absolute; top:{pos.y}px; left:{pos.x}px">
+<nav use:getContextMenuDimension style="position: absolute; top:{pos.y}px; left:{pos.x}px; z-index: 100;">
     <div class="navbar" id="navbar">
         <ul>
             {#each menuItems as item}
