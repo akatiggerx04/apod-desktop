@@ -40,8 +40,15 @@
         return new_date.toLocaleDateString('ae-ae', options)
     }
 
+    // Close Image Preview
+    function closePreview() {
+        preview = null;
+        document.body.style.overflow = "auto";
+    }
+
     // Fetch APOD
     async function getAPOD(cus_date) {
+        closePreview();
         apod = false;
         let url;
         if (cus_date) {
@@ -53,12 +60,6 @@
         const result = await client.get(url);
         apod = result.data ?? {};
     } 
-
-    // Close Image Preview
-    function closePreview() {
-        preview = null;
-        document.body.style.overflow = "auto";
-    }
 
     // Right Click Menu
     let pos = { x: 0, y: 0 }
